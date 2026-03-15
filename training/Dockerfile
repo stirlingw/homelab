@@ -1,8 +1,7 @@
-FROM python:3.11-slim
+FROM python:3.9-slim
 WORKDIR /app
 RUN pip install --no-cache-dir \
-    ray[train]==2.40.0 \
-    xgboost-ray==0.1.19 \
+    xgboost==2.1.0 \
     mlflow==2.19.0 \
     numpy==1.26.4 \
     boto3==1.35.0

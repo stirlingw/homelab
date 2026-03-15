@@ -1,8 +1,16 @@
 import ray
 from ray import serve
 import xgboost as xgb
+import mlflow
+import mlflow.xgboost
 import numpy as np
 from fastapi import FastAPI
+import os
+
+os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://10.43.109.100:9000"
+os.environ["AWS_ACCESS_KEY_ID"] = "minioadmin"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin123"
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
 app = FastAPI()
 
@@ -10,12 +18,12 @@ app = FastAPI()
 @serve.ingress(app)
 class XGBoostModel:
     def __init__(self):
-        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
-        y = np.array([0, 1, 0, 1])
-        dtrain = xgb.DMatrix(X, label=y)
-        params = {"max_depth": 2, "objective": "binary:logistic"}
-        self.model = xgb.train(params, dtrain, num_boost_round=10)
-        print("Model trained and ready")
+        mlflow.set_tracking_uri("http://10.43.250.197:80")
+        print("Loading model from MLflow registry...")
+        self.model = mlflow.xgboost.load_model(
+            "models:/XGBoostHomeLab/1"
+        )
+        print("Model loaded successfully")
 
     @app.post("/predict")
     async def predict(self, data: dict):
@@ -25,7 +33,8 @@ class XGBoostModel:
         prediction = int(probability[0] > 0.5)
         return {
             "prediction": prediction,
-            "probability": float(probability[0])
+            "probability": float(probability[0]),
+            "model_version": "XGBoostHomeLab/1"
         }
 
 if __name__ == "__main__":

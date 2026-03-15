@@ -1,54 +1,44 @@
-import ray
-from ray import train
-from ray.train import ScalingConfig
-from ray.train.xgboost import XGBoostTrainer
+import xgboost as xgb
 import mlflow
+import mlflow.xgboost
 import numpy as np
 import os
 
-os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://minio.mlflow.svc.cluster.local:9000"
+os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://10.43.109.100:9000"
 os.environ["AWS_ACCESS_KEY_ID"] = "minioadmin"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin123"
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
-mlflow.set_tracking_uri("http://mlflow.mlflow.svc.cluster.local:80")
+mlflow.set_tracking_uri("http://10.43.250.197:80")
 mlflow.set_experiment("xgboost-homelab")
 
-ray.init(address="ray://ray-kuberay-head-svc.ray.svc.cluster.local:10001")
-
-import ray.data
 X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
 y = np.array([0, 1, 0, 1])
-data = np.column_stack([X, y])
-dataset = ray.data.from_numpy(data)
+dtrain = xgb.DMatrix(X, label=y)
 
-def train_func():
-    with mlflow.start_run():
-        trainer = XGBoostTrainer(
-            scaling_config=ScalingConfig(
-                num_workers=1,
-                use_gpu=False,
-            ),
-            label_column="2",
-            params={
-                "max_depth": 2,
-                "objective": "binary:logistic",
-                "eval_metric": "logloss",
-            },
-            datasets={"train": dataset},
-            num_boost_round=10,
-        )
-        result = trainer.fit()
+params = {
+    "max_depth": 2,
+    "objective": "binary:logistic",
+    "eval_metric": "logloss",
+}
+num_boost_round = 10
 
-        mlflow.log_params({
-            "max_depth": 2,
-            "num_boost_round": 10,
-        })
-        mlflow.log_metric("train_loss", result.metrics["train-logloss"])
+with mlflow.start_run():
+    mlflow.log_params(params)
+    mlflow.log_param("num_boost_round", num_boost_round)
 
-        mlflow.register_model(
-            f"runs:/{mlflow.active_run().info.run_id}/model",
-            "XGBoostHomeLab"
-        )
-        print(f"Training complete. Metrics: {result.metrics}")
+    model = xgb.train(params, dtrain, num_boost_round=num_boost_round)
 
-train_func()
+    preds = model.predict(dtrain)
+    accuracy = float(np.mean((preds > 0.5) == y))
+    mlflow.log_metric("train_accuracy", accuracy)
+
+    mlflow.xgboost.log_model(
+        model,
+        artifact_path="model",
+        registered_model_name="XGBoostHomeLab"
+    )
+
+    print(f"Training complete.")
+    print(f"Accuracy: {accuracy}")
+    print(f"Model registered as XGBoostHomeLab")

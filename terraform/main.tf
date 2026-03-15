@@ -51,6 +51,23 @@ resource "helm_release" "ray" {
   namespace        = "ray"
   create_namespace = true
   version          = "1.3.0"
+  
+  set {
+    name  = "head.image.repository"
+    value = "stirlingw/ray-xgboost"
+  }
+  set {
+    name  = "head.image.tag"
+    value = "2.41.0"
+  }
+  set {
+    name  = "worker.image.repository"
+    value = "stirlingw/ray-xgboost"
+  }
+  set {
+    name  = "worker.image.tag"
+    value = "2.41.0"
+  }
 
   depends_on = [helm_release.kuberay_operator]
 }   
@@ -64,6 +81,14 @@ resource "helm_release" "postgresql" {
   create_namespace = true
   version          = "18.5.6"
 
+  set {
+    name  = "extraEnvVars.MLFLOW_ALLOW_ORIGIN"
+    value = "*"
+  }
+  set {
+    name  = "extraEnvVars.MLFLOW_APP_ALLOWED_HOSTS"
+    value = "*"
+  }
   set {
     name  = "auth.username"
     value = "mlflow"
@@ -123,6 +148,19 @@ resource "helm_release" "mlflow" {
   namespace        = "mlflow"
   create_namespace = true
   version          = "1.8.1"
+  
+  set {
+    name  = "extraEnvVars.MLFLOW_ALLOW_FILESTORE_ARTIFACT_DOWNLOADS"
+    value = "true"
+  }
+  set {
+    name  = "extraArgs.gunicorn-opts"
+    value = "--forwarded-allow-ips=*"
+  }
+  set {
+    name  = "extraEnvVars.GUNICORN_CMD_ARGS"
+    value = "--forwarded-allow-ips=*"
+  }
 
   set {
     name  = "backendStore.postgres.enabled"
