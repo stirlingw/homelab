@@ -17,4 +17,4 @@ COPY xgboost_serve.py .
 EXPOSE 8000
 
 # Start Ray Serve
-CMD ["python", "-m", "ray", "start", "--head", "--block"]
+CMD ["python", "xgboost_serve.py"]

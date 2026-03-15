@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homelab-fastapi
+  namespace: ray
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homelab-fastapi
+  template:
+    metadata:
+      labels:
+        app: homelab-fastapi
+    spec:
+      containers:
+        - name: homelab-fastapi
+          image: stirlingw/homelab-fastapi:latest
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homelab-fastapi
+  namespace: ray
+spec:
+  selector:
+    app: homelab-fastapi
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30800
+  type: NodePort
