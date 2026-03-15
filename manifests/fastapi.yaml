@@ -24,6 +24,8 @@ kind: Service
 metadata:
   name: homelab-fastapi
   namespace: ray
+  labels:
+    app: homelab-fastapi
 spec:
   selector:
     app: homelab-fastapi
