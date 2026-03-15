@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-nodeport
+  namespace: mlflow
+spec:
+  selector:
+    app.kubernetes.io/name: mlflow
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30900
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-console-nodeport
+  namespace: mlflow
+spec:
+  selector:
+    app.kubernetes.io/name: minio
+  ports:
+    - port: 9001
+      targetPort: 9001
+      nodePort: 30901
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-nodeport
+  namespace: argocd
+spec:
+  selector:
+    app.kubernetes.io/name: argocd-server
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30757
+  type: NodePort
