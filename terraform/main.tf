@@ -19,6 +19,8 @@ provider "helm" {
   kubernetes {
     config_path = "~/.kube/config"
   }
+  repository_config_path = "/home/stirling/.config/helm/repositories.yaml"
+  repository_cache       = "/home/stirling/.cache/helm/repository"
 }
 
 # ArgoCD
@@ -52,3 +54,120 @@ resource "helm_release" "ray" {
 
   depends_on = [helm_release.kuberay_operator]
 }   
+
+# PostgreSQL for MLflow
+resource "helm_release" "postgresql" {
+  name             = "postgresql"
+  repository       = "oci://registry-1.docker.io/bitnamicharts"
+  chart            = "postgresql"
+  namespace        = "mlflow"
+  create_namespace = true
+  version          = "18.5.6"
+
+  set {
+    name  = "auth.username"
+    value = "mlflow"
+  }
+  set {
+    name  = "auth.password"
+    value = "mlflow123"
+  }
+  set {
+    name  = "auth.database"
+    value = "mlflow"
+  }
+}
+
+# MinIO for artifact storage
+resource "helm_release" "minio" {
+  name             = "minio"
+  repository       = "https://charts.min.io/"
+  chart            = "minio"
+  namespace        = "mlflow"
+  create_namespace = true
+  version          = "5.4.0"
+
+  set {
+    name  = "rootUser"
+    value = "minioadmin"
+  }
+  set {
+    name  = "rootPassword"
+    value = "minioadmin123"
+  }
+  set {
+    name  = "buckets[0].name"
+    value = "mlflow"
+  }
+  set {
+    name  = "buckets[0].policy"
+    value = "none"
+  }
+  set {
+    name  = "mode"
+    value = "standalone"
+  }
+  set {
+    name  = "resources.requests.memory"
+    value = "512Mi"
+  }
+
+  depends_on = [helm_release.postgresql]
+}
+
+# MLflow
+resource "helm_release" "mlflow" {
+  name             = "mlflow"
+  repository       = "https://community-charts.github.io/helm-charts"
+  chart            = "mlflow"
+  namespace        = "mlflow"
+  create_namespace = true
+  version          = "1.8.1"
+
+  set {
+    name  = "backendStore.postgres.enabled"
+    value = "true"
+  }
+  set {
+    name  = "backendStore.postgres.host"
+    value = "postgresql.mlflow.svc.cluster.local"
+  }
+  set {
+    name  = "backendStore.postgres.port"
+    value = "5432"
+  }
+  set {
+    name  = "backendStore.postgres.database"
+    value = "mlflow"
+  }
+  set {
+    name  = "backendStore.postgres.user"
+    value = "mlflow"
+  }
+  set {
+    name  = "backendStore.postgres.password"
+    value = "mlflow123"
+  }
+  set {
+    name  = "artifactRoot.s3.enabled"
+    value = "true"
+  }
+  set {
+    name  = "artifactRoot.s3.bucket"
+    value = "mlflow"
+  }
+  set {
+    name  = "artifactRoot.s3.awsAccessKeyId"
+    value = "minioadmin"
+  }
+  set {
+    name  = "artifactRoot.s3.awsSecretAccessKey"
+    value = "minioadmin123"
+  }
+  set {
+    name  = "extraEnvVars.MLFLOW_S3_ENDPOINT_URL"
+    value = "http://minio.mlflow.svc.cluster.local:9000"
+  }
+
+  depends_on = [helm_release.minio]
+}
