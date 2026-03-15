@@ -209,3 +209,37 @@ resource "helm_release" "mlflow" {
 
   depends_on = [helm_release.minio]
 }
+
+resource "helm_release" "prometheus_stack" {
+  name             = "prometheus-stack"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  namespace        = "monitoring"
+  create_namespace = true
+  version          = "82.10.4"
+
+  set {
+    name  = "grafana.adminPassword"
+    value = "homelab123"
+  }
+  set {
+    name  = "prometheus.prometheusSpec.scrapeInterval"
+    value = "15s"
+  }
+  set {
+    name  = "grafana.service.type"
+    value = "NodePort"
+  }
+  set {
+    name  = "grafana.service.nodePort"
+    value = "30300"
+  }
+  set {
+    name  = "prometheus.service.type"
+    value = "NodePort"
+  }
+  set {
+    name  = "prometheus.service.nodePort"
+    value = "30090"
+  }
+}

@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fastapi-metrics
+  namespace: monitoring
+  labels:
+    release: prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - ray
+  selector:
+    matchLabels:
+      app: homelab-fastapi
+  endpoints:
+    - port: http
+      path: /metrics/
+      interval: 15s

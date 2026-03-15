@@ -28,7 +28,8 @@ spec:
   selector:
     app: homelab-fastapi
   ports:
-    - port: 8080
+    - name: http
+      port: 8080
       targetPort: 8080
       nodePort: 30800
   type: NodePort
