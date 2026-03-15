@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: xgboost-raytrain
+  namespace: ray
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: raytrain
+          image: stirlingw/homelab-raytrain:latest
+          env:
+            - name: RAY_ADDRESS
+              value: "http://ray-kuberay-head-svc.ray.svc.cluster.local:8265"
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: "http://minio.mlflow.svc.cluster.local:9000"
+            - name: AWS_ACCESS_KEY_ID
+              value: "minioadmin"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "minioadmin123"
+            - name: MLFLOW_TRACKING_URI
+              value: "http://10.43.250.197:80"
