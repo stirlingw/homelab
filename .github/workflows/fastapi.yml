@@ -25,3 +25,17 @@ jobs:
           context: ./fastapi
           push: true
           tags: stirlingw/homelab-fastapi:latest
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+
+      - name: Restart FastAPI deployment
+        run: kubectl rollout restart deployment/homelab-fastapi -n ray
+
+      - name: Sync ArgoCD
+        run: |
+          curl -sk -X POST \
+            -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}" \
+            https://${{ secrets.ARGOCD_SERVER }}/api/v1/applications/xgboost-ray-serve/sync
