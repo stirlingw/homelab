@@ -51,3 +51,4 @@ def predict(data: dict):
 
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
+# updated
