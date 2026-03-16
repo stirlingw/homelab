@@ -1,0 +1,35 @@
+name: Build and push training image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'training/**'
+      - 'raytrain/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push training image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./training
+          push: true
+          tags: stirlingw/homelab-training:latest
+
+      - name: Build and push Ray Train image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./raytrain
+          push: true
+          tags: stirlingw/homelab-raytrain:latest
