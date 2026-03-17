@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,16 +26,8 @@ jobs:
           push: true
           tags: stirlingw/homelab-fastapi:latest
 
-      - name: Set up kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
-
       - name: Restart FastAPI deployment
         run: kubectl rollout restart deployment/homelab-fastapi -n ray
 
-      - name: Sync ArgoCD
-        run: |
-          curl -sk -X POST \
-            -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}" \
-            https://${{ secrets.ARGOCD_SERVER }}/api/v1/applications/xgboost-ray-serve/sync
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/homelab-fastapi -n ray --timeout=120s
