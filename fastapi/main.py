@@ -56,3 +56,4 @@ app.mount("/metrics", metrics_app)
 # pipeline test 2
 # pipeline test 2
 # self-hosted runner test
+# buildx test
