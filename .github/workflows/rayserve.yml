@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: self-hosted
+    env:
+      KUBECONFIG: /home/stirling/.kube/config
     steps:
       - name: Checkout
         uses: actions/checkout@v4
