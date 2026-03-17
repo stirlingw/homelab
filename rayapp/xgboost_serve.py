@@ -7,9 +7,9 @@ import numpy as np
 from fastapi import FastAPI
 import os
 
-os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://10.43.109.100:9000"
-os.environ["AWS_ACCESS_KEY_ID"] = "minioadmin"
-os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin123"
+os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://minio.mlflow.svc.cluster.local:9000"
+os.environ["AWS_ACCESS_KEY_ID"] = os.environ.get("AWS_ACCESS_KEY_ID", "minioadmin")
+os.environ["AWS_SECRET_ACCESS_KEY"] = os.environ.get("AWS_SECRET_ACCESS_KEY", "minioadmin123")
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
 app = FastAPI()
@@ -19,11 +19,19 @@ app = FastAPI()
 class XGBoostModel:
     def __init__(self):
         mlflow.set_tracking_uri("http://10.43.250.197:80")
-        print("Loading model from MLflow registry...")
+        print("Loading Production model from MLflow registry...")
         self.model = mlflow.xgboost.load_model(
-            "models:/XGBoostHomeLab/1"
+            "models:/XGBoostHomeLab/Production"
         )
-        print("Model loaded successfully")
+        self.model_info = self._get_model_info()
+        print(f"Model loaded: {self.model_info}")
+
+    def _get_model_info(self):
+        client = mlflow.MlflowClient()
+        versions = client.get_latest_versions("XGBoostHomeLab", stages=["Production"])
+        if versions:
+            return f"XGBoostHomeLab/Production/v{versions[0].version}"
+        return "XGBoostHomeLab/Production"
 
     @app.post("/predict")
     async def predict(self, data: dict):
@@ -34,8 +42,12 @@ class XGBoostModel:
         return {
             "prediction": prediction,
             "probability": float(probability[0]),
-            "model_version": "XGBoostHomeLab/1"
+            "model_version": self.model_info
         }
+
+    @app.get("/model-info")
+    async def model_info(self):
+        return {"model_version": self.model_info}
 
 if __name__ == "__main__":
     ray.init(ignore_reinit_error=True)
