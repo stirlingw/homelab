@@ -5,6 +5,7 @@ RUN pip install --no-cache-dir \
     evidently==0.4.33 \
     psycopg2-binary==2.9.9 \
     pandas==2.1.0 \
-    numpy==1.26.4
+    numpy==1.26.4 \
+    prometheus-client==0.21.0
 COPY drift_monitor.py .
 CMD ["python", "drift_monitor.py"]

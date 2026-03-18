@@ -243,3 +243,17 @@ resource "helm_release" "prometheus_stack" {
     value = "30090"
   }
 }
+
+resource "helm_release" "pushgateway" {
+  name             = "pushgateway"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "prometheus-pushgateway"
+  namespace        = "monitoring"
+  create_namespace = false
+  version          = "2.14.0"
+
+  set {
+    name  = "service.type"
+    value = "ClusterIP"
+  }
+}
